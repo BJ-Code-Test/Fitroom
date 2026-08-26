@@ -9,3 +9,6 @@ dist
 
 test-results
 playwright-report
+
+# Rohframes des Turntables (63 MB) - die WebP-Sequenz in public/ ist die Lieferung
+assets/blender/turntable_png/
