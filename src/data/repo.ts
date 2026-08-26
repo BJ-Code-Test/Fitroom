@@ -2,6 +2,7 @@ import { SLOTS, type BodyParams, type Plan, type SavedOutfit, type Worn } from '
 import { DEFAULT_BODY } from '../lib/body';
 import { newId } from '../lib/id';
 import { supabase } from '../lib/supabase';
+import type { Json } from '../lib/database.types';
 
 /**
  * Datenzugriff.
@@ -38,6 +39,16 @@ function writeLocal(key: string, value: unknown): void {
     // läuft weiter. Wer sie sicher haben will, meldet sich an.
   }
 }
+
+/**
+ * Die jsonb-Grenze.
+ *
+ * `Worn` und `BodyParams` sind gewöhnliche Interfaces ohne Index-Signatur und
+ * passen deshalb strukturell nicht auf `Json`, obwohl sie genau das sind: reine
+ * Daten. Statt beide Typen dafür aufzuweichen, steht die Umdeutung an den zwei
+ * Stellen, an denen sie tatsächlich in eine jsonb-Spalte laufen.
+ */
+const alsJson = (wert: Worn | BodyParams): Json => wert as unknown as Json;
 
 type BodyRow = Record<string, unknown>;
 
@@ -196,7 +207,7 @@ export async function createOutfit(
 
   const { data, error } = await supabase
     .from('outfits')
-    .insert({ user_id: userId, name, worn, body })
+    .insert({ user_id: userId, name, worn: alsJson(worn), body: alsJson(body) })
     .select('id, created_at')
     .single();
 
@@ -301,8 +312,8 @@ export async function migrateLocalToCloud(userId: string): Promise<number> {
     const rows = localOutfits.map((o) => ({
       user_id: userId,
       name: o.name,
-      worn: o.worn,
-      body: o.body,
+      worn: alsJson(o.worn),
+      body: alsJson(o.body),
     }));
     const { error } = await supabase.from('outfits').insert(rows);
     if (!error) moved += rows.length;

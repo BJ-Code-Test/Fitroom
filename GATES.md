@@ -43,6 +43,12 @@ auch fehlschlagen kann.
       echten Browser bedient, und was der Nutzer zusammenstellt, überlebt einen Neuladen
     CHECK: npm run verify:e2e
     EXPECT: E2E_OK
+- [x] G11 — Row Level Security hält einem echten Angriff stand: ohne Anmeldung ist
+      keine der vier Tabellen lesbar, und mit zwei hinterlegten Testkonten scheitert jeder
+      Kreuzzugriff (lesen, ändern, löschen) auf fremde Zeilen, während die Positivkontrolle
+      auf eigenen Zeilen gelingt und `profiles.plan` unverändert bleibt
+    CHECK: npm run verify:rls
+    EXPECT: RLS_OK
 
 ## Ausserhalb der Befehlsprüfung
 
@@ -56,14 +62,22 @@ auch fehlschlagen kann.
 - **Bezahlung** ist nicht echt. `dev_activate_pro` / `dev_cancel_pro` schalten den
   Plan ohne Zahlung um; sie sind vom Client aufrufbar und damit keine Sicherheit.
   Mit Stripe werden beide Funktionen gelöscht und durch einen Webhook mit
-  Service-Key ersetzt.
+  Service-Key ersetzt; das Schema `billing_dev` fällt dann ersatzlos weg.
 - **3D-Ansicht** folgt in einer eigenen Runde.
+- **Migrationen liegen nur im Projekt, nicht im Repo.** Alle vier (zuletzt
+  `20260826182146_plan_schutz_ueber_current_user_und_dev_billing_privat`) wurden
+  über das Supabase-MCP angewandt; das Repo hat kein `supabase/`-Verzeichnis. Wer
+  sie versioniert haben will, holt sie einmal mit `supabase db pull` herunter —
+  eine einzelne Datei nachzureichen wäre irreführender als keine.
+- **Leaked Password Protection** ist im Auth-Bereich des Projekts aus. Das ist ein
+  Schalter im Dashboard, keine Code-Änderung; ein Zwischenlauf der Advisors hat ihn
+  gemeldet. Lohnt einen Klick.
 
 ---
 
 ## Ergebnis (gemessen am 26.08.2026)
 
-Alle zehn Gates erfüllt, jeweils mit Exit-Code 0 und passendem Token.
+Alle elf Gates erfüllt, jeweils mit Exit-Code 0 und passendem Token.
 `npm run verify:all` läuft in einem Durchgang durch.
 
 | Gate | Token | Belegte Zahl |
@@ -78,6 +92,7 @@ Alle zehn Gates erfüllt, jeweils mit Exit-Code 0 und passendem Token.
 | G8 | STYLE_OK | Palette, Intensität, Blob-Feld, Fallback vorhanden |
 | G9 | SERVE_OK | GET / = 200, main.tsx und App.tsx werden übersetzt |
 | G10 | E2E_OK | 32 Tests, 32 bestanden, 0 gescheitert (Chrome, 17,0 s) |
+| G11 | RLS_OK | 56 Prüfungen im vollen Lauf, 0 fremde Zeilen les-, änder- oder löschbar |
 
 **RLS:** alle vier Tabellen `rls_aktiv = true` (profiles 2 Policies, die drei
 anderen je 1 für alle Operationen). Supabase-Advisor: von 8 Sicherheitshinweisen
@@ -132,3 +147,72 @@ echte Fehler der App und drei mehrdeutige Wähler in den Tests:
 Beide Fixes sind mit Gegenprobe belegt: mit zurückgedrehtem Fix scheitern genau
 die Tests wieder, die ihn abdecken (Empty → landing/outfits, saveWorn →
 studio/masse/outfits).
+
+### Nachtrag RLS-Beweis (26.08.2026)
+
+Bis hierher war RLS nur *behauptet*: die Policies existierten, geprüft hatte sie
+niemand. `npm run verify:rls` (`scripts/verify-rls.mjs`) prüft sie jetzt gegen
+zwei echte Anmeldungen.
+
+**Voller Lauf, mit zwei Wegwerf-Konten** (`rls-test-a@fitroom.invalid`,
+`rls-test-b@fitroom.invalid`, über das Supabase-MCP angelegt und danach samt
+Daten restlos gelöscht — `auth.users` steht wieder auf 0):
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| A liest Zeilen von B (4 Tabellen) | 0 Zeilen, kein Fehler |
+| A ändert Zeilen von B (4 Tabellen) | 0 Zeilen geändert, B danach unverändert |
+| A löscht Zeilen von B (4 Tabellen) | 0 Zeilen gelöscht, B danach vollständig |
+| A schreibt mit `user_id` von B (3 Tabellen) | 42501, abgewiesen |
+| Positivkontrolle: A auf eigenen Zeilen | 4× gelesen, 2× geändert — alles gelingt |
+| Anonym, nur anon-Key (4 Tabellen) | 0 Zeilen sichtbar, INSERT 42501 |
+| `profiles.plan` auf `pro` setzen | prallt ab, `display_name` desselben UPDATEs kommt an |
+| **56 Prüfungen** | **alle bestanden, Exit 0, `RLS_OK`** |
+
+Die Verneinungen sind belastbar, weil daneben jeweils etwas steht, das gelingen
+muss: eine erfundene Tabelle liefert einen Fehler (leeres Ergebnis ≠ kaputte
+Abfrage), A kommt an die eigenen Zeilen heran, und im Plan-Angriff wird
+`display_name` im selben UPDATE tatsächlich geschrieben.
+
+**Gegenprobe.** Mit `angriffsziele(saatB)` → `angriffsziele(saatA)` zielt der
+Angriff auf die eigenen Zeilen — also auf das, was eine Welt ohne RLS zeigen
+würde. Das Skript scheitert dann sofort ("A liest 0 Zeilen von B — 1 Zeilen",
+Exit 1, kein `RLS_OK`). Die Prüfung kann fehlschlagen.
+
+**Gefundenes Loch: der Pro-Schalter war tot.** `protect_plan_column()` fragte
+`auth.role() = 'authenticated'`. `auth.role()` liest nur einen Anspruch aus dem
+JWT und bleibt deshalb auch *innerhalb* einer SECURITY-DEFINER-Funktion auf
+`authenticated` stehen. Der Trigger hat also `dev_activate_pro()` mitgeschreddert:
+die Funktion lief durch und setzte den Plan auf den alten Wert zurück. Gemessen
+vor dem Fix: `dev_activate_pro` gab `plan: "free"` zurück, die Tabelle blieb auf
+`free`. Aufgefallen war es nie, weil `billing.ts` die Rückgabe nicht ansieht und
+optimistisch `pro` meldet, und weil die E2E-Tests im Gastmodus laufen. Der
+Trigger prüft jetzt `current_user` — die echte Datenbankrolle, die ein Client
+nicht fälschen kann. Gegen erneutes Verrotten hält G11 den Fall fest (3e).
+
+**Advisors.** `dev_activate_pro` / `dev_cancel_pro` sind aus dem
+veröffentlichten Schema heraus in `billing_dev` gezogen (von PostgREST nicht
+ausgeliefert); in `public` steht nur noch eine SECURITY-INVOKER-Hülle gleichen
+Namens, der Client bleibt unverändert. Zusätzlich: enge Whitelist für
+`p_interval`, `search_path = ''`, und ein Treffer von null Zeilen ist jetzt ein
+Fehler statt stiller Erfolg. `get_advisors(type: "security")` meldet danach
+**nichts mehr** (vorher 2 Warnungen).
+
+**Was das Skript ohne Service-Key nicht kann.** Die E-Mail-Bestätigung ist in
+diesem Projekt aktiv, ein `signUp()` mit dem anon-Key liefert deshalb keine
+Sitzung. Ohne `SUPABASE_SERVICE_ROLE_KEY` oder hinterlegte `RLS_TEST_A/B_*` läuft
+`verify:rls` im eingeschränkten Modus: 15 Prüfungen (anonymer Zugriff auf alle
+vier Tabellen, anonyme Schreibversuche, anonyme RPC-Aufrufe) und ein
+ausdrücklicher Block "EINGESCHRÄNKT", der auflistet, was dieser Lauf *nicht*
+belegt. Genau so läuft er in `verify:all`. Der volle Beweis oben ist mit echten
+Konten gemessen, nicht behauptet.
+
+### Nachtrag G9 (26.08.2026)
+
+`verify:serve` blieb beim Herunterfahren hängen: Vites Abhängigkeits-Optimierer
+lief noch ("The build was canceled"), `server.close()` löste nie auf, der Prozess
+endete mit Exit-Code 13 — obwohl jede Prüfung darin durch war. Das trat auch auf
+dem unveränderten Stand auf, war also schon vorher da und nur nie aufgefallen.
+Das Schließen läuft jetzt gegen eine Frist von 3 s, danach beendet sich der
+Prozess selbst mit dem richtigen Code. Gegenprobe: mit verfälschter Erwartung
+meldet das Skript weiterhin `FEHLER` und Exit 1.

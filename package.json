@@ -15,7 +15,8 @@
     "verify:routes": "node scripts/verify-routes.mjs",
     "verify:style": "node scripts/verify-style.mjs",
     "verify:serve": "node scripts/verify-serve.mjs",
-    "verify:all": "npm run typecheck && npm run build && npm run verify:body && npm run verify:fit && npm run verify:plan && npm run verify:catalog && npm run verify:routes && npm run verify:style && npm run verify:serve && npm run verify:e2e",
+    "verify:rls": "node scripts/verify-rls.mjs",
+    "verify:all": "npm run typecheck && npm run build && npm run verify:body && npm run verify:fit && npm run verify:plan && npm run verify:catalog && npm run verify:routes && npm run verify:style && npm run verify:serve && npm run verify:rls && npm run verify:e2e",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "verify:e2e": "playwright test --reporter=line && node scripts/say.mjs E2E_OK"
