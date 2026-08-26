@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
-import { NgField } from './components/layout/Shell';
 import { PaywallProvider } from './components/Paywall';
 import { AuthProvider, useAuth } from './state/auth';
 import { useApp } from './state/app';
@@ -33,14 +32,13 @@ export const ROUTES = [
   '/registrieren',
 ] as const;
 
-/** Palette und Intensität auf <html> spiegeln. */
+/** Das gewählte Aussehen auf <html> spiegeln. */
 function ThemeBridge() {
-  const palette = useUi((s) => s.palette);
-  const intensity = useUi((s) => s.intensity);
+  const theme = useUi((s) => s.theme);
 
   useEffect(() => {
-    applyTheme(palette, intensity);
-  }, [palette, intensity]);
+    applyTheme(theme);
+  }, [theme]);
 
   return null;
 }
@@ -76,7 +74,6 @@ export default function App() {
       <ThemeBridge />
       <DataBridge />
       <ScrollToTop />
-      <NgField />
       <PaywallProvider>
         <Routes>
           <Route path="/" element={<Home />} />

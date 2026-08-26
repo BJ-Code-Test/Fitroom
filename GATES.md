@@ -33,7 +33,9 @@ auch fehlschlagen kann.
 - [x] G7 — Jede geplante Route ist registriert und ihre Seite existiert als Datei
     CHECK: npm run verify:routes
     EXPECT: ROUTES_OK
-- [x] G8 — Neuro-Glass ist korrekt eingebunden: Palette, Intensität, Blob-Feld, Fallback
+- [x] G8 — Reiner Neumorphismus: neue Stildatei eingebunden, .ng/.ng-inset definiert,
+      Neuro-Glass restlos entfernt (kein backdrop-filter, kein Blob-Feld, keine Paletten),
+      prefers-reduced-motion respektiert, und alle Kontraste gemessen ueber 4,5:1 bzw. 3:1
     CHECK: npm run verify:style
     EXPECT: STYLE_OK
 - [x] G9 — Der Dev-Server startet und liefert die App samt Einstiegspunkt aus
@@ -61,74 +63,120 @@ auch fehlschlagen kann.
 
 ---
 
-## Ergebnis (gemessen am 26.08.2026)
+## Runde "Neumorphismus pur" (Branch stil/neumorphismus-pur)
 
-Alle zehn Gates erfüllt, jeweils mit Exit-Code 0 und passendem Token.
-`npm run verify:all` läuft in einem Durchgang durch.
+Der Umbau von Neuro-Glass auf reinen Neumorphismus wurde mitten in den
+Testanpassungen abgebrochen. G1-G9 stehen, G10 ist offen. Zusaetzlich zu den
+zehn Gates gilt fuer diese Runde:
+
+- [x] G11 — Die Flaechen ragen sichtbar aus dem Untergrund heraus.
+      MANUELL: /, /studio, /katalog, /masse und /preise als Screenshot
+      gerendert (chrome --headless=new) und mit dem Read-Werkzeug angesehen.
+      Erwartet: zwei kraeftige Aussenschatten, kein diffuser Schimmer an der
+      Oberkante, keine flach aufliegende Flaeche.
+- [x] G12 — Kein Test wurde abgeschwaecht, um ihn gruen zu bekommen. Die drei
+      Stil-Tests (gleiche Farbe wie Untergrund, kein inset am Aussenschatten,
+      echter Fokusring) bleiben in voller Schaerfe.
+      MANUELL: der Vergleich gegen main zeigt fuer diese drei Tests nur die
+      Reparatur kaputter regulaerer Ausdruecke, keine gelockerte Erwartung.
+- [x] G13 — Die Umstellung ist vollstaendig: kein backdrop-filter, kein
+      Blob-Feld, keine Palettenklassen (ng-p-*, ng-i-*) und keine Reste von
+      neuro-glass.css.
+      MANUELL: Volltextsuche ueber das ganze Arbeitsverzeichnis (ohne
+      node_modules, dist, .git) statt nur ueber src/ wie in G8.
+
+---
+
+## Ergebnis der Stil-Runde (gemessen am 26.08.2026, Branch stil/neumorphismus-pur)
+
+`npm run verify:all` laeuft in einem Durchgang durch, Exit-Code 0, alle zehn
+Token gesetzt. G11 bis G13 sind manuell belegt.
 
 | Gate | Token | Belegte Zahl |
 |------|-------|--------------|
-| G1 | TYPECHECK_OK | 0 Fehler |
-| G2 | BUILD_OK | 116 Module, 480 kB JS / 46 kB CSS |
-| G3 | BODY_OK | Höhe, Umfänge, Beinlänge, Statur wirken messbar |
+| G1 | TYPECHECK_OK | 0 Fehler — und `tests/` ist jetzt mit drin (siehe unten) |
+| G2 | BUILD_OK | Bundle gebaut |
+| G3 | BODY_OK | Hoehe, Umfaenge, Beinlaenge, Statur wirken messbar |
 | G4 | FIT_OK | XS = zu-eng (16), L = passt (100), XXL = zu-weit (24) |
 | G5 | PLAN_OK | 5 Funktionen, Free 3 Outfits / 3 Anbieter, Pro unbegrenzt / 6 |
 | G6 | CATALOG_OK | 42 Teile, 6 Anbieter, alle 6 Kategorien belegt |
-| G7 | ROUTES_OK | 12 Routen registriert (11 + 404), 11 Seiten-Dateien |
-| G8 | STYLE_OK | Palette, Intensität, Blob-Feld, Fallback vorhanden |
-| G9 | SERVE_OK | GET / = 200, main.tsx und App.tsx werden übersetzt |
-| G10 | E2E_OK | 32 Tests, 32 bestanden, 0 gescheitert (Chrome, 17,0 s) |
+| G7 | ROUTES_OK | 12 Routen registriert, 11 Seiten-Dateien |
+| G8 | STYLE_OK | 10 Pflichtstuecke, 9 Ueberreste in 39 Quelldateien nicht mehr auffindbar, 14 Kontraste gerechnet |
+| G9 | SERVE_OK | GET / = 200, main.tsx und App.tsx werden uebersetzt |
+| G10 | E2E_OK | 33 Tests, 33 bestanden, 0 gescheitert (Chrome, 17,0 s) |
 
-**RLS:** alle vier Tabellen `rls_aktiv = true` (profiles 2 Policies, die drei
-anderen je 1 für alle Operationen). Supabase-Advisor: von 8 Sicherheitshinweisen
-auf 2 reduziert; die verbleibenden zwei betreffen ausschließlich
-`dev_activate_pro` / `dev_cancel_pro` und sind der bekannte, oben beschriebene
-Übergang bis zum echten Billing.
+### Was in dieser Runde noch zu tun war
 
-**NICHT erledigt — Sichtprüfung im Browser (HANDOFF):** Die Chrome-Erweiterung
-war nicht verbunden ("Browser extension is not connected"), die Seiten wurden
-also nicht mit eigenen Augen geprüft. Belegt ist nur, dass der Server sie
-ausliefert und der Code übersetzt. Die Oberfläche gehört vor der nächsten
-Runde einmal durchgeklickt.
+1. **Zwei zerschossene regulaere Ausdruecke** in `tests/e2e/einstellungen.spec.ts`.
+   Beiden fehlte der Rueckstrich: `/rgba?(/g` statt `/rgba?\(/g` (unbalancierte
+   Gruppe, Playwright brach beim Laden der Datei ab, bevor irgendein Test lief)
+   und `/d+/g` statt `/\d+/g` in `helligkeit()`. Danach liefen alle 33 Tests
+   ohne weitere Aenderung durch — inhaltlich war die Datei fertig.
+2. **Das Relief war zu schwach und leuchtete oben.** Siehe unten.
+3. **Drei tote Verweise** auf das entfernte Design-System: `README.md` (Tabelle
+   und Gate-Zahl) und die Ausnahme in `scripts/fix-umlauts.mjs`.
 
-### Nachtrag Sichtprüfung (26.08.2026)
+### G11 — Sichtpruefung (manuell, erfuellt)
 
-Die Chrome-Erweiterung blieb nicht verbunden. Stattdessen wurden alle Seiten mit
-`chrome --headless=new --screenshot` gerendert und angesehen. Dabei gefunden und
-behoben:
+`/`, `/studio`, `/katalog`, `/masse`, `/preise`, `/einstellungen` als Screenshot
+gerendert (`chrome --headless=new`, 1600x1150), dazu `/preise`, `/masse`,
+`/studio` in Dunkel und `/studio`, `/masse` bei 390px Breite. Angesehen wurde
+jedes Bild einzeln, mehrere zusaetzlich in zweifacher Vergroesserung.
 
-1. **Fehlende Umlaute** — die gesamte Oberfläche war in Ersatzschreibweise
-   gesetzt ("Koerpermasse", "Groesse"). 45 + 36 Dateien umgeschrieben
-   (`scripts/fix-umlauts.mjs`, 659 Treffer). Der Preset-Schlüssel `kraeftig`
-   blieb bewusst unangetastet, weil er Typ und Datenwert ist.
-2. **Kachel-Rumpf plattgedrückt** — in der schmalen Studio-Spalte verlor
-   `aspect-ratio` gegen die Zeilenhöhe des Rasters, Name und Preis fielen auf
-   null. Feste Bildhöhe statt Seitenverhältnis (`.grid--mini`).
+**Befund im Ausgangszustand:** die Flaechen lagen auf dem Grund statt in ihm.
+Der helle Schatten (`-12px -12px 18px #ffffff`) streute rund 20px weit und
+bildete ueber jeder Karte ein breites Leuchten; der dunkle Schatten
+(`13px 13px 20px #9aa9c0`) war so blass, dass er die Hoehe nicht trug. Das ist
+genau die Beschwerde "das Helle oben an den Boxen passt nicht".
 
-Danach `npm run verify:all` erneut vollständig grün.
+**Aenderung:** die zwei Aussenschatten sind nicht mehr symmetrisch. Das Licht
+ist kurz und straff (halber Versatz des Schattens, kleiner Weichzeichner) und
+markiert die beleuchtete Facette; der Schatten faellt doppelt so weit, ist
+weicher und mit `#8697b5` deutlich dunkler. Sechs Varianten wurden zum Vergleich
+nebeneinander gerendert, bevor eine gewaehlt wurde. Zusaetzlich faellt die
+Hoehenleiter unter 760px Breite um rund ein Drittel: in festen Pixeln notiertes
+Relief traegt sonst auf einer 130px-Kachel einen Schatten wie einen Umhang.
 
-**Erledigt durch G10:** das Verhalten beim Klicken — Anziehen, Ausziehen,
-Speichern, Umbenennen, Löschen, Paywall, Tarifwechsel, Filter, Maße — ist jetzt
-in 32 Playwright-Tests festgehalten statt nur angesehen.
+### G12 — Keine abgeschwaechten Tests (manuell, erfuellt)
 
-### Nachtrag E2E-Runde (26.08.2026)
+Gegen `main` verglichen enthaelt `tests/` genau zwei geaenderte Zeilen, beide
+Reparaturen kaputter regulaerer Ausdruecke. Keine Erwartung wurde gelockert.
+Die drei Stil-Tests wurden stattdessen einzeln gegen einen bekannten Fehlerfall
+gefahren, in dem sie anschlagen MUESSEN:
 
-Der erste Lauf stand bei 21 bestanden / 10 gescheitert. Dahinter steckten zwei
-echte Fehler der App und drei mehrdeutige Wähler in den Tests:
+| Eingriff | erwartet gescheitert | tatsaechlich |
+|---|---|---|
+| `.ng` auf `#eef1f6` eingefaerbt | "herausgeformt, nicht aufgelegt" | genau dieser, 5 andere gruen |
+| `inset 0 1px 0 rgba(255,255,255,.8)` an `.ng` ergaenzt | "herausgeformt, nicht aufgelegt" | genau dieser, 5 andere gruen |
+| Fokus-`outline` auf `0` gesetzt | "echter Fokusring" | genau dieser, 5 andere gruen |
+| dunkles `--ng-bg` auf den hellen Wert gesetzt | "Helligkeit laesst sich umstellen" | genau dieser, 5 andere gruen |
 
-1. **Das aktuelle Outfit war flüchtig.** `worn` lebte nur im Arbeitsspeicher —
-   ein Neuladen warf weg, was gerade zusammengestellt war. Jetzt geht jede
-   Änderung durch `setWorn` und wird über `repo.saveWorn` im Browser gesichert,
-   `hydrate` lädt sie zurück. Bewusst nur lokal: die Ankleide ist ein
-   Arbeitsstand, kein Dokument — wer ihn behalten will, speichert ihn als
-   Outfit. `clearLocal` räumt den neuen Schlüssel mit auf, und die
-   Einstellungen-Seite weist ihn aus.
-2. **Leerzustände waren keine Überschriften.** `Empty` setzte den Titel als
-   fett gesetzten `strong` mit Überschriften-Klasse — sichtbar eine
-   Überschrift, für Screenreader und Tastatur aber keine. Betraf jeden
-   Leerzustand der App, darunter die 404-Seite, die damit überhaupt keine
-   Überschrift hatte. Jetzt ein echtes `h3`.
+### G13 — Umstellung vollstaendig (manuell, erfuellt)
 
-Beide Fixes sind mit Gegenprobe belegt: mit zurückgedrehtem Fix scheitern genau
-die Tests wieder, die ihn abdecken (Empty → landing/outfits, saveWorn →
-studio/masse/outfits).
+Volltextsuche ueber das ganze Arbeitsverzeichnis (ohne `node_modules`, `dist`,
+`.git`, `test-results`, `assets`, `package-lock.json`) nach `backdrop-filter`,
+`ng-field`, `neuro-glass`, `ng-p-`, `ng-i-`, `PALETTES`, `INTENSITIES`,
+`--ng-glass`, `--ng-rim`: **kein Treffer** ausserhalb von `GATES.md` und
+`scripts/verify-style.mjs`, die die Begriffe als Suchdaten fuehren. Damit ist
+die Suche breiter als G8, das nur `src/` abklopft. `src/styles/` enthaelt genau
+zwei Dateien: `neumorphism.css` und `app.css`. `index.html` traegt nur noch
+`data-theme="light"`, keine Palettenklasse. Der Migrationsschritt in
+`src/state/ui.ts` (Version 3) nennt `palette` noch — absichtlich: er muss den
+alten Wert aus dem Browserspeicher lesen koennen, um ihn abzuloesen.
+
+### Nebenbefund: typecheck sah die Tests gar nicht
+
+`tsconfig.json` schloss nur `src` ein. Ein Syntaxfehler in einer Testdatei kam
+so an G1 und G2 vorbei und fiel erst im Browserlauf auf — genau das war hier
+passiert. `include` steht jetzt auf `["src", "tests"]`. Gegenprobe: mit
+zurueckgedrehtem Rueckstrich meldet `npm run typecheck`
+`einstellungen.spec.ts(60,42): error TS1005` und endet mit Exit 1; reparariert
+meldet es wieder `TYPECHECK_OK`.
+
+### Weiterhin offen (Handoff, unveraendert)
+
+- **Bezahlung** ist nicht echt; `dev_activate_pro` / `dev_cancel_pro` sind vom
+  Client aufrufbar.
+- **3D-Ansicht** folgt in einer eigenen Runde.
+- **Die Hoehenleiter kennt zwei Massstaebe** (ab und unter 760px). Fuer sehr
+  grosse Bildschirme fehlt ein dritter; dort wirkt das Relief eher zu klein.

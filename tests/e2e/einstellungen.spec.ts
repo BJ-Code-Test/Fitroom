@@ -1,26 +1,84 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 test.describe('Einstellungen und Tarif', () => {
-  test('Ein Palettenwechsel wirkt sofort und bleibt erhalten', async ({ page }) => {
+  /**
+   * An die Stelle der Palettenauswahl tritt der Hell/Dunkel-Schalter. Geprueft
+   * wird nicht der Attributwert allein, sondern die gerenderte Farbe: dass
+   * <html> ein Attribut traegt, sagt noch nicht, dass sich etwas geaendert hat.
+   */
+  test('Die Helligkeit laesst sich umstellen, wirkt sofort und bleibt erhalten', async ({ page }) => {
     await page.goto('/einstellungen');
 
-    // Standard ist die ruhige helle Palette.
-    await expect(page.locator('html')).toHaveClass(/ng-p-papier/);
+    // Hell ist der Standard.
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    const hell = await grundfarbe(page);
 
-    await page.getByRole('button', { name: /Graphit/ }).click();
-    await expect(page.locator('html')).toHaveClass(/ng-p-graphit/);
+    await page.getByRole('tab', { name: 'Dunkel' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
+    const dunkel = await grundfarbe(page);
+    expect(dunkel).not.toEqual(hell);
+    expect(helligkeit(dunkel)).toBeLessThan(helligkeit(hell));
+
+    // Ueber einen Neuladen hinweg.
     await page.reload();
-    await expect(page.locator('html')).toHaveClass(/ng-p-graphit/);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    expect(await grundfarbe(page)).toEqual(dunkel);
+
+    // Und der Rueckweg.
+    await page.getByRole('tab', { name: 'Hell' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    expect(await grundfarbe(page)).toEqual(hell);
   });
 
-  test('Die Farbintensität lässt sich umstellen', async ({ page }) => {
+  /**
+   * Der Kern des Stils: eine Karte hat DIESELBE Farbe wie der Untergrund und
+   * ragt allein durch zwei Aussenschatten heraus. Faerbt jemand die Karte
+   * wieder ein oder ergaenzt einen inneren Lichtstreifen, faellt dieser Test.
+   */
+  test('Die Flaechen sind aus dem Untergrund herausgeformt, nicht aufgelegt', async ({ page }) => {
     await page.goto('/einstellungen');
-    await expect(page.locator('html')).toHaveClass(/ng-i-1/);
 
-    await page.getByRole('tab', { name: 'Mono' }).click();
-    await expect(page.locator('html')).toHaveClass(/ng-i-0/);
+    const karte = page.locator('.ng').first();
+    await expect(karte).toBeVisible();
+
+    const messung = await karte.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return {
+        flaeche: s.backgroundColor,
+        grund: getComputedStyle(document.body).backgroundColor,
+        schatten: s.boxShadow,
+      };
+    });
+
+    // Gleicher Werkstoff.
+    expect(messung.flaeche).toEqual(messung.grund);
+    // Kein Rahmen und kein innerer Lichtstreifen — nur Aussenschatten.
+    expect(messung.schatten).not.toContain('inset');
+    // Zwei davon: hell oben links, dunkel unten rechts. Jeder Schatten traegt
+    // genau eine Farbangabe, also zaehlt die Zahl der rgb()-Werte die Schatten.
+    expect(messung.schatten.match(/rgba?\(/g) ?? []).toHaveLength(2);
+  });
+
+  /**
+   * Weiche Schatten koennen Fokus nicht zeigen. Ohne echtes outline waere die
+   * Oberflaeche mit der Tastatur unbedienbar.
+   */
+  test('Bedienelemente tragen einen echten Fokusring', async ({ page }) => {
+    await page.goto('/einstellungen');
+
+    const knopf = page.getByRole('button', { name: 'Lokale Daten löschen' });
+    await knopf.focus();
+
+    const ring = await knopf.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { breite: s.outlineWidth, stil: s.outlineStyle, farbe: s.outlineColor };
+    });
+    expect(ring.stil).toBe('solid');
+    expect(parseFloat(ring.breite)).toBeGreaterThanOrEqual(2);
+    // Der Ring muss sich vom Untergrund abheben, sonst ist er Dekoration.
+    const grund = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(ring.farbe).not.toEqual(grund);
   });
 
   test('Lokale Daten löschen fragt nach und räumt danach auf', async ({ page }) => {
@@ -75,3 +133,14 @@ test.describe('Einstellungen und Tarif', () => {
     await expect(paywall.getByText(/69,00 €/)).toBeVisible();
   });
 });
+
+/** Die Grundfarbe der Oberflaeche, wie sie der Browser tatsaechlich malt. */
+async function grundfarbe(page: Page): Promise<string> {
+  return page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+}
+
+/** Grobe Helligkeit einer rgb()-Angabe — reicht, um hell von dunkel zu trennen. */
+function helligkeit(rgb: string): number {
+  const [r, g, b] = (rgb.match(/\d+/g) ?? ['0', '0', '0']).map(Number);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}

@@ -2,50 +2,27 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 /**
- * Oberflächen-Einstellungen.
+ * Oberflaechen-Einstellungen.
  *
- * Palette und Intensität sind Klassen auf <html> — genau so verlangt es das
- * Neuro-Glass-Regelwerk. `applyTheme` ist die einzige Stelle, die das Element
- * anfasst; alles andere setzt nur den Zustand.
+ * Es gibt genau eine Oberflaeche — Neumorphismus — in zwei Helligkeiten.
+ * Keine Paletten, keine Intensitaetsstufen: die Oberflaeche bleibt nahezu
+ * farblos, damit die Farbe von der Kleidung kommt. `applyTheme` ist die
+ * einzige Stelle, die das <html>-Element anfasst.
  */
 
-/**
- * Die Reihenfolge ist die Empfehlung: oben das Ruhige.
- *
- * `papier` ist der Standard und bewusst fast farblos — in einem Kleiderschrank
- * soll die Farbe von der Kleidung kommen, nicht von der Oberfläche. Wer es
- * bunter mag, findet die kräftigen Paletten weiter unten.
- */
-export const PALETTES = [
-  { id: 'papier', label: 'Papier', dark: false, swatch: ['#e3e7ee', '#e9e5e0', '#dde4e6'] },
-  { id: 'nebel', label: 'Nebel', dark: false, swatch: ['#c3ccdd', '#d5d9e2', '#aeb9cc'] },
-  { id: 'graphit', label: 'Graphit', dark: true, swatch: ['#3a4250', '#4a5260', '#2f3a44'] },
-  { id: 'tinte', label: 'Tinte', dark: true, swatch: ['#4a5aa8', '#7a4a8f', '#2f7a72'] },
-  { id: 'sand', label: 'Sand', dark: false, swatch: ['#e8c9a0', '#d9a08a', '#b7c4a8'] },
-  { id: 'nordlicht', label: 'Nordlicht', dark: false, swatch: ['#8ea2ff', '#ff9ec4', '#7fe3d4'] },
-  { id: 'ozean', label: 'Ozean', dark: false, swatch: ['#8fc4d9', '#7fb0c9', '#a8d9cf'] },
-  { id: 'rosenquarz', label: 'Rosenquarz', dark: false, swatch: ['#e3b9d2', '#c9b8e8', '#f0cdb8'] },
+export const THEMES = [
+  { id: 'hell', label: 'Hell', attr: 'light' },
+  { id: 'dunkel', label: 'Dunkel', attr: 'dark' },
 ] as const;
 
-export type PaletteId = (typeof PALETTES)[number]['id'];
-
-export const INTENSITIES = [
-  { id: 0, label: 'Mono', hint: 'fast farblos' },
-  { id: 1, label: 'Ruhig', hint: 'gedämpft' },
-  { id: 2, label: 'Normal', hint: 'ausgewogen' },
-  { id: 3, label: 'Kräftig', hint: 'plakativ' },
-] as const;
-
-export type Intensity = 0 | 1 | 2 | 3;
+export type ThemeId = (typeof THEMES)[number]['id'];
 export type Unit = 'cm' | 'inch';
 
 interface UiState {
-  palette: PaletteId;
-  intensity: Intensity;
+  theme: ThemeId;
   unit: Unit;
   sidebarOpen: boolean;
-  setPalette: (p: PaletteId) => void;
-  setIntensity: (i: Intensity) => void;
+  setTheme: (t: ThemeId) => void;
   setUnit: (u: Unit) => void;
   toggleSidebar: () => void;
   setSidebar: (open: boolean) => void;
@@ -54,41 +31,40 @@ interface UiState {
 export const useUi = create<UiState>()(
   persist(
     (set) => ({
-      palette: 'papier',
-      intensity: 1,
+      theme: 'hell',
       unit: 'cm',
       sidebarOpen: false,
-      setPalette: (palette) => set({ palette }),
-      setIntensity: (intensity) => set({ intensity }),
+      setTheme: (theme) => set({ theme }),
       setUnit: (unit) => set({ unit }),
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
       setSidebar: (sidebarOpen) => set({ sidebarOpen }),
     }),
     {
       name: 'fitroom.ui',
-      // Version 2 stellt auf die ruhige Standardpalette um. Ohne diesen Schritt
-      // behielte jeder, der die App schon offen hatte, das alte bunte Tinte.
-      version: 2,
+      // Version 3 loest Palette und Intensitaet ab. Ohne diesen Schritt haetten
+      // alle, die die App schon offen hatten, ein `theme: undefined` im
+      // Speicher — und damit gar kein Aussehen.
+      version: 3,
       migrate: (state, from) => {
-        const old = (state ?? {}) as Partial<UiState>;
-        if (from < 2) return { ...old, palette: 'papier', intensity: 1 } as UiState;
+        const old = (state ?? {}) as Partial<UiState> & { palette?: string };
+        if (from < 3) {
+          // Wer eine dunkle Palette gewaehlt hatte, bleibt im Dunkeln.
+          const wasDark = old.palette === 'tinte' || old.palette === 'graphit';
+          const { palette: _palette, ...rest } = old;
+          return { ...rest, theme: wasDark ? 'dunkel' : 'hell' } as UiState;
+        }
         return old as UiState;
       },
     },
   ),
 );
 
-/** Schreibt Palette und Intensität als Klassen auf <html>. */
-export function applyTheme(palette: PaletteId, intensity: Intensity): void {
+/** Spiegelt das gewaehlte Aussehen auf <html>. */
+export function applyTheme(theme: ThemeId): void {
   const el = document.documentElement;
-  el.classList.forEach((cls) => {
-    if (cls.startsWith('ng-p-') || cls.startsWith('ng-i-')) el.classList.remove(cls);
-  });
-  el.classList.add(`ng-p-${palette}`, `ng-i-${intensity}`);
-
-  const isDark = PALETTES.find((p) => p.id === palette)?.dark ?? true;
-  el.setAttribute('data-theme', isDark ? 'dark' : 'light');
-  el.style.colorScheme = isDark ? 'dark' : 'light';
+  const attr = THEMES.find((t) => t.id === theme)?.attr ?? 'light';
+  el.setAttribute('data-theme', attr);
+  el.style.colorScheme = attr;
 }
 
 // ------------------------------------------------------------- Einheiten

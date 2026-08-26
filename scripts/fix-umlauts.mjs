@@ -226,8 +226,9 @@ function walk(dir) {
     if (!exts.has(extname(entry))) continue;
     // Diese Datei selbst enthaelt beide Schreibweisen als Daten.
     if (entry === 'fix-umlauts.mjs') continue;
-    // Das Design-System kommt aus der Skill und wird nicht veraendert.
-    if (entry === 'neuro-glass.css') continue;
+    // Die Stildatei ist bewusst durchgehend in ASCII gehalten: ihre Kommentare
+    // erklaeren das Relief und sollen in jeder Werkzeugkette lesbar bleiben.
+    if (entry === 'neumorphism.css') continue;
 
     const before = readFileSync(full, 'utf8');
     let after = before;
