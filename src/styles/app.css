@@ -438,7 +438,7 @@ body {
 /* --- Kompakte Kacheln in der Ankleide ------------------------------------ */
 /* In der schmalen Seitenspalte des Studios wären die normalen Kacheln so
    hoch, dass nur zwei Teile gleichzeitig sichtbar sind. */
-.grid--mini { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 9px; }
+.grid--mini { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 16px; }
 /* Feste Bildhoehe statt aspect-ratio: im Raster gewinnt sonst die Zeilenhoehe,
    und der Rumpf mit Name und Preis wird auf null gedrueckt. */
 .grid--mini .tile { align-self: start; grid-template-rows: auto auto; }
@@ -451,7 +451,9 @@ body {
 .grid--mini .tile__fav svg { width: 13px; height: 13px; }
 
 /* Die Auswahlliste bekommt eine eigene Höhe statt ins Unendliche zu wachsen. */
-.picker { max-height: 46vh; overflow-y: auto; padding-right: 4px; }
+/* Plastische Kacheln brauchen Luft: der Schatten gehoert zur Form, und
+   ein Scroll-Container schneidet ihn am Rand ab. Deshalb Innenabstand. */
+.picker { max-height: 52vh; overflow-y: auto; padding: 6px 8px 6px 6px; }
 .picker::-webkit-scrollbar { width: 8px; }
 .picker::-webkit-scrollbar-thumb {
   border-radius: 4px;
