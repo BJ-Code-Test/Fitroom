@@ -1,0 +1,12 @@
+# Zeilenenden im Repository immer LF, im Arbeitsverzeichnis nach Betriebssystem.
+# Ohne diese Regel erzeugt jeder Wechsel zwischen Windows und Linux Scheinaenderungen.
+* text=auto eol=lf
+
+# Binaerdateien nicht anfassen.
+*.png binary
+*.jpg binary
+*.webp binary
+*.mp4 binary
+*.glb binary
+*.blend binary
+*.woff2 binary

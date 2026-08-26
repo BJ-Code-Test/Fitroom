@@ -1,0 +1,44 @@
+{
+  "name": "fitroom",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b --noEmit && vite build && node scripts/say.mjs BUILD_OK",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit && node scripts/say.mjs TYPECHECK_OK",
+    "verify:body": "tsx scripts/verify-body.mts",
+    "verify:fit": "tsx scripts/verify-fit.mts",
+    "verify:plan": "tsx scripts/verify-plan.mts",
+    "verify:catalog": "tsx scripts/verify-catalog.mts",
+    "verify:routes": "node scripts/verify-routes.mjs",
+    "verify:style": "node scripts/verify-style.mjs",
+    "verify:serve": "node scripts/verify-serve.mjs",
+    "verify:all": "npm run typecheck && npm run build && npm run verify:body && npm run verify:fit && npm run verify:plan && npm run verify:catalog && npm run verify:routes && npm run verify:style && npm run verify:serve && npm run verify:e2e",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "verify:e2e": "playwright test --reporter=line && node scripts/say.mjs E2E_OK"
+  },
+  "dependencies": {
+    "@react-three/drei": "^9.114.3",
+    "@react-three/fiber": "^8.17.10",
+    "@supabase/supabase-js": "^2.112.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.6",
+    "three": "^0.169.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^22.7.5",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "@types/three": "^0.169.0",
+    "@vitejs/plugin-react": "^4.3.2",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.9"
+  }
+}
