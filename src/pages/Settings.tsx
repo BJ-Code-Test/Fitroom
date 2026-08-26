@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { AppShell } from '../components/layout/Shell';
 import { Badge, Button, Field, Modal, Notice, Panel } from '../components/ui';
 import { clearLocal } from '../data/repo';
-import { INTENSITIES, PALETTES, useUi, type Intensity, type PaletteId } from '../state/ui';
+import { THEMES, useUi, type ThemeId } from '../state/ui';
 import { useApp } from '../state/app';
 import { useAuth } from '../state/auth';
 
 /** Aussehen, Einheiten und lokale Daten. */
 export default function Settings() {
-  const { palette, intensity, unit, setPalette, setIntensity, setUnit } = useUi();
+  const { theme, unit, setTheme, setUnit } = useUi();
   const { user } = useAuth();
   const hydrate = useApp((s) => s.hydrate);
   const [confirmClear, setConfirmClear] = useState(false);
@@ -21,54 +21,23 @@ export default function Settings() {
             <div className="stack stack--sm">
               <h2 className="h2">Aussehen</h2>
               <p className="small muted">
-                Die Palette bestimmt die Farben im Hintergrund, die Stufe, wie stark sie
-                durchkommen. Beides wirkt sofort.
+                FitRoom hat genau eine Oberfläche: geformtes Material, Licht von oben links.
+                Die Fläche bleibt farblos, damit die Farbe von der Kleidung kommt. Zur Wahl
+                steht nur, wie hell der Werkstoff ist. Die Umstellung wirkt sofort.
               </p>
             </div>
 
-            <Field label="Palette">
-              <div className="chips">
-                {PALETTES.map((p) => (
+            <Field label="Helligkeit">
+              <div className="ng-tabs" role="tablist" aria-label="Helligkeit">
+                {THEMES.map((t) => (
                   <button
-                    key={p.id}
-                    type="button"
-                    className={`chip ${palette === p.id ? 'chip--on' : ''}`}
-                    onClick={() => setPalette(p.id as PaletteId)}
-                    aria-pressed={palette === p.id}
-                  >
-                    <span style={{ display: 'inline-flex', gap: 3, marginRight: 3 }}>
-                      {p.swatch.map((hex) => (
-                        <span
-                          key={hex}
-                          style={{
-                            width: 9,
-                            height: 9,
-                            borderRadius: '50%',
-                            background: hex,
-                            display: 'inline-block',
-                          }}
-                        />
-                      ))}
-                    </span>
-                    {p.label}
-                    {p.dark ? '' : ' (hell)'}
-                  </button>
-                ))}
-              </div>
-            </Field>
-
-            <Field label="Farbintensität">
-              <div className="ng-tabs" role="tablist" aria-label="Intensität">
-                {INTENSITIES.map((i) => (
-                  <button
-                    key={i.id}
+                    key={t.id}
                     role="tab"
                     className="ng-tab"
-                    aria-selected={intensity === i.id}
-                    onClick={() => setIntensity(i.id as Intensity)}
-                    title={i.hint}
+                    aria-selected={theme === t.id}
+                    onClick={() => setTheme(t.id as ThemeId)}
                   >
-                    {i.label}
+                    {t.label}
                   </button>
                 ))}
               </div>
@@ -87,7 +56,7 @@ export default function Settings() {
 
             <Notice>
               Weniger Bewegung stellt dein Betriebssystem ein — FitRoom richtet sich danach
-              und schaltet dann Glanz und Bewegung ab.
+              und schaltet Übergänge und Bewegung dann ab.
             </Notice>
           </div>
         </Panel>

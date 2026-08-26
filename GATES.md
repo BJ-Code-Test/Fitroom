@@ -33,7 +33,9 @@ auch fehlschlagen kann.
 - [x] G7 — Jede geplante Route ist registriert und ihre Seite existiert als Datei
     CHECK: npm run verify:routes
     EXPECT: ROUTES_OK
-- [x] G8 — Neuro-Glass ist korrekt eingebunden: Palette, Intensität, Blob-Feld, Fallback
+- [x] G8 — Reiner Neumorphismus: neue Stildatei eingebunden, .ng/.ng-inset definiert,
+      Neuro-Glass restlos entfernt (kein backdrop-filter, kein Blob-Feld, keine Paletten),
+      prefers-reduced-motion respektiert, und alle Kontraste gemessen ueber 4,5:1 bzw. 3:1
     CHECK: npm run verify:style
     EXPECT: STYLE_OK
 - [x] G9 — Der Dev-Server startet und liefert die App samt Einstiegspunkt aus

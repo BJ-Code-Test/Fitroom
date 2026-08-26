@@ -36,7 +36,9 @@ const res = await fetch(`${base}/`);
 if (!res.ok) await fail(`Startseite antwortete mit ${res.status}`);
 const html = await res.text();
 if (!html.includes('id="root"')) await fail('Die Antwort enthält kein #root.');
-if (!/ng-p-\w+/.test(html)) await fail('Die Antwort trägt keine Palette-Klasse.');
+if (!/<html[^>]*\sdata-theme="(light|dark)"/.test(html)) {
+  await fail('Die Antwort traegt kein data-theme — die Helligkeit haette keinen Startwert.');
+}
 console.log(`GET / -> ${res.status}, ${html.length} Zeichen`);
 
 // --- Der Einstiegspunkt muss als Modul ausgeliefert werden ---------------

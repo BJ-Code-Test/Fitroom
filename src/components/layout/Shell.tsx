@@ -8,19 +8,10 @@ import { useApp } from '../../state/app';
 /**
  * Rahmen der App.
  *
- * `NgField` ist das Blob-Feld des Design-Systems und muss als erstes Element
- * im Body stehen — ohne farbige Flächen im Hintergrund hat `backdrop-filter`
- * nichts zu brechen und der ganze Stil fällt auf mattes Plastik zurück.
+ * Untergrund und Fläche sind derselbe Werkstoff — zwischen `body` und Karte
+ * liegt nichts, was gerendert werden müsste. Das frühere Blob-Feld ist mit
+ * dem Glas verschwunden.
  */
-export function NgField() {
-  return (
-    <div className="ng-field ng-drift" aria-hidden="true">
-      <i />
-      <i />
-      <i />
-    </div>
-  );
-}
 
 interface NavEntry {
   to: string;

@@ -1,62 +1,61 @@
-# GATES — FitRoom Mannequin Asset  (alle erfuellt, Stand: Build vom 2026-08-26)
+# GATES — Schaufensterpuppe v2 (Neubau nach Ablehnung von v1)
 
-Reproduzieren:
-```
-D:\Blender\blender.exe -b --python D:\FitRoom\assets\blender\build_mannequin.py
-D:\Blender\blender.exe -b --python D:\FitRoom\assets\blender\render_previews.py
-D:\Blender\blender.exe -b --python D:\FitRoom\assets\blender\turntable.py
-D:\Blender\blender.exe -b --python D:\FitRoom\assets\blender\make_mp4.py
-```
+Scope/OWNS: assets/blender/**, public/models/mannequin.glb, public/sequence/mannequin/**
+Nicht anfassen: src/**, tests/**, index.html, package.json
 
-## G1 Ein einziges verbundenes Mesh-Objekt namens `Mannequin`
-- [x] met
-  CHECK: "D:/Blender/blender.exe" -b "D:/FitRoom/assets/blender/mannequin.blend" --python "D:/FitRoom/assets/blender/verify_mannequin.py"
-  EXPECT: VERIFY_OK
-  EVIDENCE: 1 Mesh-Objekt, 1 zusammenhaengende Komponente, Name `Mannequin`.
+Warnung aus v1: die alte Ledger-Datei hakte "visuell geprueft" ab, obwohl das Ergebnis
+vom Nutzer als unbrauchbar zurueckgewiesen wurde. G7 hier ist deshalb bewusst als
+manuelles Gate mit dokumentierter Evidenz und ehrlichem Restfazit formuliert.
 
-## G2 Hoehe 1.78 m, Sohlen auf Z=0, symmetrisch zur YZ-Ebene
-- [x] met (Teil von verify_mannequin.py)
-  EXPECT: HEIGHT_OK ORIGIN_OK SYMMETRY_OK
-  EVIDENCE: 1.78000 m, min z = 0.000000, 0 Vertices ohne Spiegelpartner,
-            Objekt-Origin (0,0,0), BBox x-zentriert.
+## G1 — Build laeuft fehlerfrei durch
+- [ ] `build_mannequin2.py` erzeugt ein Objekt `Mannequin`.
+    CHECK: "D:\Blender\blender.exe" -b --factory-startup --python "D:\FitRoom\assets\blender\build_mannequin2.py"
+    EXPECT: BUILD_OK
 
-## G3 0 N-Gons, manifold, keine losen/doppelten Verts, Normalen nach aussen
-- [x] met (Teil von verify_mannequin.py)
-  EVIDENCE: ngons 0, non-manifold 0, lose Kanten 0, lose Verts 0,
-            Duplikate 0, signiertes Volumen +0.0712 m3.
+## G2 — Geometrie-Spezifikation, unabhaengig nachgemessen
+- [ ] Hoehe 1.78 m +-2 mm, min Z = 0, symmetrisch zur YZ-Ebene, Front nach -Y,
+      Tris <= 60000, 0 N-Gons, 0 non-manifold, 1 Objekt, 1 Material `Mannequin_White`,
+      UV-Layer vorhanden und im Bereich 0..1, Normalen nach aussen (Volumen > 0).
+    CHECK: "D:\Blender\blender.exe" -b "D:\FitRoom\assets\blender\mannequin.blend" --python "D:\FitRoom\assets\blender\verify2.py"
+    EXPECT: VERIFY_OK
 
-## G4 Tris im Budget 12000..30000
-- [x] met — 18148 Tris (9074 Quads, 100 % Quads).
+## G3 — Mess-Edge-Loops geschlossen und horizontal
+- [ ] loop_ankle/loop_knee/loop_hip/loop_waist/loop_chest/loop_shoulder existieren als
+      Vertex-Groups, jede bildet einen geschlossenen Kantenzyklus, Z-Spanne < 1 mm.
+    CHECK: "D:\Blender\blender.exe" -b "D:\FitRoom\assets\blender\mannequin.blend" --python "D:\FitRoom\assets\blender\verify_loops2.py"
+    EXPECT: LOOPS_OK
 
-## G5 Mess-Edge-Loops geschlossen und exakt horizontal
-- [x] met — alle 6 Loops closed=True, planar=True (siehe Tabelle im Bericht).
+## G4 — glTF exportiert und strukturell valide
+- [ ] `public/models/mannequin.glb`: glTF 2.0, genau ein Mesh, POSITION/NORMAL/TEXCOORD_0,
+      +Y up, Hoehe 1.78 in Y.
+    CHECK: node "D:\FitRoom\assets\blender\check_glb2.mjs"
+    EXPECT: GLB_OK
 
-## G6 Ein Material `Mannequin_White`, UVs ohne Ueberlappung
-- [x] met — 1 Material, BaseColor 0.90, Roughness 0.45, Metallic 0.0;
-            UV-Overlap 0.035 % der belegten Texel (Rasterisierung 1024^2),
-            keine UV ausserhalb 0..1.
+## G5 — Schaufensterpuppen-Proportion statt Menschmodell
+- [ ] Unabhaengig gemessene Kopfhoehen-Zahl 8.3..9.2 und Beinanteil (Schritthoehe/Gesamthoehe) >= 0.50.
+    CHECK: "D:\Blender\blender.exe" -b "D:\FitRoom\assets\blender\mannequin.blend" --python "D:\FitRoom\assets\blender\verify_proportion.py"
+    EXPECT: PROPORTION_OK
 
-## G7 GLB existiert, valides glTF 2.0, +Y up
-- [x] met
-  CHECK: node -e "const s=require('fs').statSync('D:/FitRoom/public/models/mannequin.glb');console.log(s.size>50000?'GLB_OK '+s.size:'GLB_SMALL')"
-  EXPECT: GLB_OK
-  EVIDENCE: 453016 Bytes, glTF 2.0, 1 Mesh / 1 Primitive,
-            POSITION min/max Y = 0 .. 1.78 -> +Y up, 18148 Tris.
+## G6 — Renderings vorhanden und aktuell
+- [ ] front/side/three_quarter/back/shoulder_closeup/hand_closeup als PNG in preview/,
+      jedes neuer als die .blend-Datei.
+    CHECK: node "D:\FitRoom\assets\blender\check_previews2.mjs"
+    EXPECT: PREVIEWS_OK
 
-## G8 Vier Previews 800x1000 + Wireframes, visuell geprueft
-- [x] met — front/side/three_quarter/back + 2 Wireframes, alle 800x1000,
-            von mir mit dem Read-Tool angesehen und iterativ nachgebessert
-            (3 Korrekturrunden: Schulter, Becken/Oberschenkel, Zeh/Hand).
+## G7 — Visuelle Abnahme (manuell, mit Evidenz)
+- [ ] Mindestens drei Runden bauen -> rendern -> Bilder selbst mit dem Read-Tool
+      ansehen -> nachbessern. Beurteilt werden: keine Facetten auf der Silhouette,
+      fliessender Schulter-/Achsel-Uebergang, schlanke Hand mit Daumen und Handgelenk,
+      Standpose glaubwuerdig. Ehrliches Restfazit gehoert in den Bericht, auch wenn negativ.
+      MANUAL: Runden und Befunde im Abschlussbericht dokumentiert.
 
-## G9 Turntable 120 Frames, 3 Grad/Frame, 900x1260 RGBA
-- [x] met
-  CHECK: node "D:/FitRoom/assets/blender/check_sequence.mjs"
-  EXPECT: SEQ_OK
-  EVIDENCE: 120 WebP + 120 PNG, je 900x1260, Alpha-Flag gesetzt,
-            gesamt 2117096 B (2.02 MB), Schnitt 17.2 KB, max 22.6 KB.
+## G8 — Turntable neu, im Budget
+- [ ] 120 WebP RGBA in `public/sequence/mannequin/`, je 900x1260, Summe < 10 MB,
+      Frame 0001 = Front, 3 Grad/Frame, alle Frames neuer als die .blend-Datei.
+    CHECK: node "D:\FitRoom\assets\blender\check_sequence2.mjs"
+    EXPECT: SEQUENCE_OK
 
-## G10 MP4 + Kontaktabzug, Kontaktabzug visuell geprueft
-- [x] met — mannequin_turntable.mp4 (334 KB, 30 fps, H.264, 120 Frames),
-            turntable_contact.png 900x945 mit Frames 1,11,...,111;
-            visuell geprueft: gleichmaessige Drehung, Figur mittig,
-            keine Groessenaenderung (120 mm Brennweite).
+## G9 — App-Dateien unangetastet
+- [ ] src/**, tests/**, index.html, package.json unveraendert gegenueber Sitzungsbeginn.
+    CHECK: node "D:\FitRoom\assets\blender\check_untouched.mjs"
+    EXPECT: UNTOUCHED_OK
