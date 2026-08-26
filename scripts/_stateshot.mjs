@@ -1,0 +1,17 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ channel: 'chrome' });
+const p = await b.newPage({ viewport: { width: 1600, height: 1000 } });
+await p.goto('http://localhost:5183/katalog', { waitUntil: 'networkidle' });
+const btn = p.locator('.ng-btn').first();
+const read = () => btn.evaluate((e) => getComputedStyle(e).boxShadow);
+console.log('RUHE  :', await read());
+await btn.hover();
+console.log('HOVER :', await read());
+await p.mouse.down();
+console.log('AKTIV :', await read());
+await p.mouse.up();
+const chipOn = p.locator('.chip--on').first();
+console.log('CHIP an:', await chipOn.evaluate((e) => getComputedStyle(e).boxShadow));
+const input = p.locator('.ng-input').first();
+console.log('FELD  :', await input.evaluate((e) => getComputedStyle(e).boxShadow));
+await b.close();

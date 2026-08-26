@@ -64,7 +64,7 @@ body {
 .brand__mark {
   width: 34px; height: 34px; border-radius: 11px; flex: none;
   display: grid; place-items: center;
-  background: linear-gradient(145deg, var(--ng-accent), var(--ng-accent-2));
+  background: linear-gradient(145deg, var(--nm-accent-hi), var(--nm-accent-lo));
   box-shadow: inset 1px 1px 1px rgba(255,255,255,.5), 3px 4px 12px color-mix(in srgb, var(--ng-accent) 40%, transparent);
   color: #fff;
 }
@@ -337,7 +337,7 @@ body {
 .step__num {
   width: 34px; height: 34px; border-radius: 12px; display: grid; place-items: center;
   font-weight: 680; font-size: 15px; color: #fff;
-  background: linear-gradient(145deg, var(--ng-accent), var(--ng-accent-2));
+  background: linear-gradient(145deg, var(--nm-accent-hi), var(--nm-accent-lo));
 }
 .pricecard { display: grid; gap: 18px; padding: 28px; align-content: start; }
 .pricecard__price { display: flex; align-items: baseline; gap: 7px; }
@@ -582,7 +582,7 @@ body {
 .account__avatar {
   width: 28px; height: 28px; border-radius: 50%; flex: none;
   display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 680;
-  background: linear-gradient(145deg, var(--ng-accent), var(--ng-accent-2));
+  background: linear-gradient(145deg, var(--nm-accent-hi), var(--nm-accent-lo));
 }
 .account__name { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -650,6 +650,11 @@ body {
      Akzent dunkel, also Weiss. In den dunklen ist er hell — dort waere Weiss
      auf Weiss (gemessen 2,23:1). */
   --nm-ink-on-accent: #ffffff;
+  /* Die beiden Stufen der gefuellten Akzentflaeche. In den hellen Paletten
+     abgedunkelt, weil weisse Schrift sonst je nach Palette zwischen 3,1:1 und
+     4,5:1 landet — Sand und Nordlicht haben helle Akzente. */
+  --nm-accent-hi: color-mix(in srgb, var(--ng-accent) 80%, #000);
+  --nm-accent-lo: color-mix(in srgb, var(--ng-accent) 64%, #000);
   /* Datenbalken tragen die Rohfarbe aus dem Code; der Filter drueckt sie auf
      mindestens 3:1 gegen die Rinne, ohne dass eine .tsx angefasst werden muss. */
   --nm-data-fix: brightness(.64) saturate(1.1);
@@ -685,6 +690,10 @@ body {
   --nm-bad:  #ef8b8b;
   --nm-data-fix: none;
   --nm-ink-on-accent: #141821;
+  /* Im Dunkeln ist der Akzent hell und die Schrift dunkel — hier waere ein
+     Abdunkeln kontraproduktiv. */
+  --nm-accent-hi: var(--ng-accent);
+  --nm-accent-lo: color-mix(in srgb, var(--ng-accent) 84%, #000);
 }
 
 /* --- Das Blob-Feld tritt zurueck ----------------------------------------
@@ -758,9 +767,9 @@ body {
 .ng-btn--primary{
   color: var(--nm-ink-on-accent);
   border: 0;
-  background: linear-gradient(145deg,
-              color-mix(in srgb, var(--ng-accent) 86%, #fff),
-              var(--ng-accent));
+  /* Nicht mit Weiss aufhellen: der Verlauf lief sonst nach oben ins Helle und
+     die weisse Schrift verlor Kontrast. Die Plastizitaet traegt die Innenkante. */
+  background: linear-gradient(145deg, var(--nm-accent-hi), var(--nm-accent-lo));
   box-shadow:
     -4px -4px 9px var(--ng-light),
      5px  6px 15px color-mix(in srgb, var(--ng-accent) 45%, transparent),
@@ -1047,7 +1056,7 @@ body {
 }
 .badge--accent{
   color: var(--nm-ink-on-accent);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--ng-accent) 86%, #fff), var(--ng-accent));
+  background: linear-gradient(145deg, var(--nm-accent-hi), var(--nm-accent-lo));
   box-shadow: var(--nm-up-1), inset 1px 1px 1px rgba(255,255,255,.3);
 }
 .badge--ok  { color: var(--nm-ok);   background: var(--ng-bg); border: 0; box-shadow: var(--nm-in-1); }

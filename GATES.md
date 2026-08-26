@@ -39,6 +39,10 @@ auch fehlschlagen kann.
 - [x] G9 — Der Dev-Server startet und liefert die App samt Einstiegspunkt aus
     CHECK: npm run verify:serve
     EXPECT: SERVE_OK
+- [x] G10 — Die Ende-zu-Ende-Tests laufen vollständig durch: jede Seite wird im
+      echten Browser bedient, und was der Nutzer zusammenstellt, überlebt einen Neuladen
+    CHECK: npm run verify:e2e
+    EXPECT: E2E_OK
 
 ## Ausserhalb der Befehlsprüfung
 
@@ -59,13 +63,13 @@ auch fehlschlagen kann.
 
 ## Ergebnis (gemessen am 26.08.2026)
 
-Alle neun Gates erfüllt, jeweils mit Exit-Code 0 und passendem Token.
+Alle zehn Gates erfüllt, jeweils mit Exit-Code 0 und passendem Token.
 `npm run verify:all` läuft in einem Durchgang durch.
 
 | Gate | Token | Belegte Zahl |
 |------|-------|--------------|
 | G1 | TYPECHECK_OK | 0 Fehler |
-| G2 | BUILD_OK | 115 Module, 476 kB JS / 29 kB CSS |
+| G2 | BUILD_OK | 116 Module, 480 kB JS / 46 kB CSS |
 | G3 | BODY_OK | Höhe, Umfänge, Beinlänge, Statur wirken messbar |
 | G4 | FIT_OK | XS = zu-eng (16), L = passt (100), XXL = zu-weit (24) |
 | G5 | PLAN_OK | 5 Funktionen, Free 3 Outfits / 3 Anbieter, Pro unbegrenzt / 6 |
@@ -73,6 +77,7 @@ Alle neun Gates erfüllt, jeweils mit Exit-Code 0 und passendem Token.
 | G7 | ROUTES_OK | 12 Routen registriert (11 + 404), 11 Seiten-Dateien |
 | G8 | STYLE_OK | Palette, Intensität, Blob-Feld, Fallback vorhanden |
 | G9 | SERVE_OK | GET / = 200, main.tsx und App.tsx werden übersetzt |
+| G10 | E2E_OK | 32 Tests, 32 bestanden, 0 gescheitert (Chrome, 17,0 s) |
 
 **RLS:** alle vier Tabellen `rls_aktiv = true` (profiles 2 Policies, die drei
 anderen je 1 für alle Operationen). Supabase-Advisor: von 8 Sicherheitshinweisen
@@ -102,6 +107,28 @@ behoben:
 
 Danach `npm run verify:all` erneut vollständig grün.
 
-**Weiterhin offen:** geprüft ist der gerenderte Zustand, nicht das Verhalten beim
-Klicken (Anziehen, Speichern, Anmelden, Paywall). Das braucht eine Sitzung mit
-verbundener Browser-Erweiterung oder einen Playwright-Durchlauf.
+**Erledigt durch G10:** das Verhalten beim Klicken — Anziehen, Ausziehen,
+Speichern, Umbenennen, Löschen, Paywall, Tarifwechsel, Filter, Maße — ist jetzt
+in 32 Playwright-Tests festgehalten statt nur angesehen.
+
+### Nachtrag E2E-Runde (26.08.2026)
+
+Der erste Lauf stand bei 21 bestanden / 10 gescheitert. Dahinter steckten zwei
+echte Fehler der App und drei mehrdeutige Wähler in den Tests:
+
+1. **Das aktuelle Outfit war flüchtig.** `worn` lebte nur im Arbeitsspeicher —
+   ein Neuladen warf weg, was gerade zusammengestellt war. Jetzt geht jede
+   Änderung durch `setWorn` und wird über `repo.saveWorn` im Browser gesichert,
+   `hydrate` lädt sie zurück. Bewusst nur lokal: die Ankleide ist ein
+   Arbeitsstand, kein Dokument — wer ihn behalten will, speichert ihn als
+   Outfit. `clearLocal` räumt den neuen Schlüssel mit auf, und die
+   Einstellungen-Seite weist ihn aus.
+2. **Leerzustände waren keine Überschriften.** `Empty` setzte den Titel als
+   fett gesetzten `strong` mit Überschriften-Klasse — sichtbar eine
+   Überschrift, für Screenreader und Tastatur aber keine. Betraf jeden
+   Leerzustand der App, darunter die 404-Seite, die damit überhaupt keine
+   Überschrift hatte. Jetzt ein echtes `h3`.
+
+Beide Fixes sind mit Gegenprobe belegt: mit zurückgedrehtem Fix scheitern genau
+die Tests wieder, die ihn abdecken (Empty → landing/outfits, saveWorn →
+studio/masse/outfits).

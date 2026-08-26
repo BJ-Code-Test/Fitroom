@@ -59,12 +59,33 @@ test.describe('Ankleide', () => {
     await expect(page.getByRole('heading', { name: 'Noch keine Passform' })).toBeVisible();
   });
 
+  test('Das zusammengestellte Outfit überlebt einen Neuladen', async ({ page }) => {
+    await page.goto('/studio');
+    await anziehen(page, 'Oberteil', /Everyday T-Shirt/);
+    await anziehen(page, 'Schuhe', /Court Sneaker/);
+    await expect(page.getByText('2 von 6 Plätzen')).toBeVisible();
+
+    // Ein Neuladen ist kein Grund, die Arbeit wegzuwerfen.
+    await page.reload();
+
+    await expect(page.getByText('2 von 6 Plätzen')).toBeVisible();
+    await expect(page.getByRole('tab', { name: /Oberteil.*Everyday T-Shirt/s })).toBeVisible();
+    await expect(page.getByRole('tab', { name: /Schuhe.*Court Sneaker/s })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Passform', exact: true })).toBeVisible();
+
+    // Und was ausgezogen wurde, bleibt ausgezogen.
+    await page.getByRole('button', { name: 'Alles ausziehen' }).click();
+    await page.reload();
+    await expect(page.getByText('0 von 6 Plätzen')).toBeVisible();
+  });
+
   test('Ein einzelnes Teil lässt sich wieder ausziehen', async ({ page }) => {
     await page.goto('/studio');
     await anziehen(page, 'Oberteil', /Everyday T-Shirt/);
     await expect(page.getByText('1 von 6 Plätzen')).toBeVisible();
 
-    await page.getByRole('button', { name: 'ausziehen' }).click();
+    // "Alles ausziehen" enthält "ausziehen" — ohne exact treffen beide Knöpfe.
+    await page.getByRole('button', { name: 'ausziehen', exact: true }).click();
     await expect(page.getByText('0 von 6 Plätzen')).toBeVisible();
   });
 });

@@ -1,4 +1,4 @@
-import type { BodyParams, Plan, SavedOutfit, Worn } from '../types';
+import { SLOTS, type BodyParams, type Plan, type SavedOutfit, type Worn } from '../types';
 import { DEFAULT_BODY } from '../lib/body';
 import { newId } from '../lib/id';
 import { supabase } from '../lib/supabase';
@@ -14,6 +14,7 @@ import { supabase } from '../lib/supabase';
 
 const LS = {
   body: 'fitroom.body',
+  worn: 'fitroom.worn',
   outfits: 'fitroom.outfits',
   favorites: 'fitroom.favorites',
   plan: 'fitroom.plan',
@@ -113,6 +114,41 @@ export async function saveBody(userId: string | null, body: BodyParams): Promise
       .from('body_profiles')
       .insert({ user_id: userId, name: 'Meine Maße', is_default: true, ...bodyToRow(body) });
   }
+}
+
+// -------------------------------------------------- Aktuelles Outfit
+
+/**
+ * Was gerade am Körper hängt.
+ *
+ * Bewusst nur lokal: die Ankleide ist ein Arbeitsstand, kein Dokument —
+ * wer ihn behalten will, speichert ihn als Outfit. Trotzdem darf ein
+ * Neuladen der Seite ihn nicht verschlucken, denn genau das liest sich
+ * für den Nutzer wie ein Datenverlust.
+ */
+export function loadWorn(): Worn {
+  const raw = readLocal<Worn>(LS.worn, {});
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+
+  // Nur behalten, was heute noch ein gültiger Slot mit gültigem Inhalt ist —
+  // ein alter Eintrag aus einer früheren Katalogfassung darf die Ankleide
+  // nicht lahmlegen.
+  const clean: Worn = {};
+  for (const slot of SLOTS) {
+    const item = raw[slot];
+    if (!item || typeof item !== 'object') continue;
+    if (typeof item.garmentId !== 'string' || typeof item.sizeLabel !== 'string') continue;
+    clean[slot] = {
+      garmentId: item.garmentId,
+      colorIndex: Number.isFinite(item.colorIndex) ? item.colorIndex : 0,
+      sizeLabel: item.sizeLabel,
+    };
+  }
+  return clean;
+}
+
+export function saveWorn(worn: Worn): void {
+  writeLocal(LS.worn, worn);
 }
 
 // ---------------------------------------------------------------- Outfits

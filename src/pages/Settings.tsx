@@ -102,6 +102,7 @@ export default function Settings() {
             </p>
             <div className="row row--wrap">
               <Badge>Maße</Badge>
+              <Badge>Aktuelles Outfit</Badge>
               <Badge>Outfits</Badge>
               <Badge>Favoriten</Badge>
               <Badge>Tarif</Badge>

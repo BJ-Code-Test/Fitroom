@@ -329,7 +329,10 @@ export function Empty({
     <div className="empty">
       <Icon name={icon} />
       <div className="stack stack--sm">
-        <strong className="h3">{title}</strong>
+        {/* Eine echte Überschrift, nicht nur fett gesetzter Text: der Leerzustand
+            ist die Aussage der Seite. Wer mit Screenreader oder Tastatur von
+            Überschrift zu Überschrift springt, muss ihn finden. */}
+        <h3 className="h3">{title}</h3>
         {text ? <p className="small">{text}</p> : null}
       </div>
       {action}

@@ -42,6 +42,16 @@ interface AppState {
   setPlan: (plan: Plan) => void;
 }
 
+/**
+ * Jede Änderung am aktuellen Outfit geht durch diese eine Stelle, damit sie
+ * nirgends vergessen wird: sichtbar machen und im Browser sichern sind hier
+ * derselbe Vorgang. Sonst verliert ein Neuladen, was gerade am Körper hängt.
+ */
+function setWorn(set: (partial: Partial<AppState>) => void, worn: Worn): void {
+  set({ worn });
+  repo.saveWorn(worn);
+}
+
 /** Maße werden beim Schieben laufend geändert — gespeichert wird nach Ruhe. */
 let bodySaveTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -62,7 +72,7 @@ export const useApp = create<AppState>()((set, get) => ({
       repo.listFavorites(userId),
       repo.loadPlan(userId),
     ]);
-    set({ body, outfits, favorites, plan, ready: true });
+    set({ body, worn: repo.loadWorn(), outfits, favorites, plan, ready: true });
   },
 
   setBody: (patch) => {
@@ -87,30 +97,28 @@ export const useApp = create<AppState>()((set, get) => ({
     // Vorauswahl — der Nutzer kann sie danach jederzeit ändern.
     const best = bestSize(garment, get().body);
     const sizeLabel = best?.size.label ?? garment.sizes[0]?.label ?? '';
-    set({
-      worn: { ...get().worn, [garment.slot]: { garmentId: garment.id, colorIndex: 0, sizeLabel } },
-    });
+    setWorn(set, { ...get().worn, [garment.slot]: { garmentId: garment.id, colorIndex: 0, sizeLabel } });
   },
 
   unwear: (slot) => {
     const next = { ...get().worn };
     delete next[slot];
-    set({ worn: next });
+    setWorn(set, next);
   },
 
   setColor: (slot, colorIndex) => {
     const item = get().worn[slot];
     if (!item) return;
-    set({ worn: { ...get().worn, [slot]: { ...item, colorIndex } } });
+    setWorn(set, { ...get().worn, [slot]: { ...item, colorIndex } });
   },
 
   setSize: (slot, sizeLabel) => {
     const item = get().worn[slot];
     if (!item) return;
-    set({ worn: { ...get().worn, [slot]: { ...item, sizeLabel } } });
+    setWorn(set, { ...get().worn, [slot]: { ...item, sizeLabel } });
   },
 
-  clearOutfit: () => set({ worn: {} }),
+  clearOutfit: () => setWorn(set, {}),
 
   saveOutfit: async (name) => {
     const { userId, worn, body } = get();
@@ -122,7 +130,8 @@ export const useApp = create<AppState>()((set, get) => ({
   applyOutfit: (id) => {
     const outfit = get().outfits.find((o) => o.id === id);
     if (!outfit) return;
-    set({ worn: outfit.worn, body: outfit.body });
+    set({ body: outfit.body });
+    setWorn(set, outfit.worn);
     void repo.saveBody(get().userId, outfit.body);
   },
 

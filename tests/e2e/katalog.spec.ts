@@ -29,14 +29,18 @@ test.describe('Katalog', () => {
     await page.getByPlaceholder('Suchen nach Name oder Marke').fill('gibtesnichtxyz');
 
     await expect(page.getByRole('heading', { name: 'Nichts gefunden' })).toBeVisible();
-    await page.getByRole('button', { name: 'Filter zurücksetzen' }).click();
+    // Die Kopfzeile hat einen zweiten Knopf ("1 Filter zurücksetzen") — gemeint
+    // ist der aus dem Leerzustand, also exakt.
+    await page.getByRole('button', { name: 'Filter zurücksetzen', exact: true }).click();
     expect(await teileAnzahl(page)).toBeGreaterThan(0);
   });
 
   test('Pro-Anbieter sind bei Free gesperrt und öffnen die Paywall', async ({ page }) => {
     await page.goto('/katalog');
 
-    const gesperrt = page.getByRole('button', { name: 'Atelier Vion' });
+    // Exakt: sobald Atelier Vion sichtbar wird, tragen auch dessen Kacheln den
+    // Markennamen — gemeint ist der Filter-Chip.
+    const gesperrt = page.getByRole('button', { name: 'Atelier Vion', exact: true });
     await expect(gesperrt).toBeVisible();
     await gesperrt.click();
 
@@ -74,7 +78,7 @@ test.describe('Katalog', () => {
     expect(nachher).toBeGreaterThan(vorher);
 
     // Der vorher gesperrte Anbieter filtert jetzt, statt die Paywall zu öffnen.
-    await page.getByRole('button', { name: 'Atelier Vion' }).click();
+    await page.getByRole('button', { name: 'Atelier Vion', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'FitRoom Pro' })).toHaveCount(0);
     expect(await teileAnzahl(page)).toBeGreaterThan(0);
 

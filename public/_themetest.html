@@ -1,9 +1,0 @@
-<!doctype html><meta charset="utf-8"><title>theme test</title>
-<script>
-  var q = new URLSearchParams(location.search);
-  localStorage.setItem('fitroom.ui', JSON.stringify({
-    state: { palette: q.get('p') || 'graphit', intensity: 1, unit: 'cm', sidebarOpen: false },
-    version: 2
-  }));
-  location.replace(q.get('to') || '/');
-</script>
