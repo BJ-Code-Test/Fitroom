@@ -15,10 +15,25 @@ const PORT = 5199;
 
 let server;
 
+/**
+ * Herunterfahren, ohne daran haengen zu bleiben.
+ *
+ * Vites Abhaengigkeits-Optimierer laeuft beim Beenden unter Windows gelegentlich
+ * noch ("The build was canceled") und laesst `server.close()` nie aufloesen. Der
+ * Prozess blieb dann mit Exit-Code 13 stehen, obwohl jede Pruefung oben durch
+ * war. Also: hoeflich schliessen, kurz warten, dann selbst beenden.
+ */
+const beenden = async (code) => {
+  await Promise.race([
+    server?.close() ?? Promise.resolve(),
+    new Promise((weiter) => setTimeout(weiter, 3000)),
+  ]);
+  process.exit(code);
+};
+
 const fail = async (msg) => {
   console.error('FEHLER:', msg);
-  await server?.close();
-  process.exit(1);
+  await beenden(1);
 };
 
 server = await createServer({
@@ -67,5 +82,5 @@ if (ghostText.includes('createRoot')) {
 if (ghostText === modText) await fail('Erfundenes Modul und main.tsx liefern dasselbe.');
 console.log(`GET /src/gibt-es-nicht.tsx -> ${ghost.status}, kein Modulcode (erwartet)`);
 
-await server.close();
 console.log('SERVE_OK');
+await beenden(0);
