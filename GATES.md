@@ -216,3 +216,28 @@ dem unveränderten Stand auf, war also schon vorher da und nur nie aufgefallen.
 Das Schließen läuft jetzt gegen eine Frist von 3 s, danach beendet sich der
 Prozess selbst mit dem richtigen Code. Gegenprobe: mit verfälschter Erwartung
 meldet das Skript weiterhin `FEHLER` und Exit 1.
+
+### Nachtrag G10 — Portkollision zwischen parallelen Arbeitskopien (26.08.2026)
+
+`npm run verify:all` endet auf dieser Maschine mit 30/32 statt 32/32, und zwar
+**nicht wegen dieses Zweigs**. `playwright.config.ts` hat `baseURL` fest auf
+`localhost:5183` und `reuseExistingServer: true`. Auf 5183 lief der Dev-Server
+einer *anderen* Arbeitskopie (`D:\FitRoom`), also hat Playwright deren App
+getestet:
+
+    GET localhost:5183/  ->  <html lang="de" data-theme="light">
+    dieser Arbeitsbaum   ->  <html lang="de" class="ng-p-papier ng-i-1" data-theme="light">
+
+Daher genau die zwei roten Tests, die auf die Paletten-Klasse prüfen. Gegen einen
+eigenen Port (5193, `reuseExistingServer: false`) laufen **32 von 32 durch**.
+
+Das ist nicht nur lästig, sondern gefährlich: bei einer anderen Konstellation
+liefe der Test genauso still ins Grüne, obwohl er fremden Code prüft. Wer drei
+Arbeitskopien parallel hält, sollte den Port aus der Umgebung nehmen
+(`process.env.FITROOM_E2E_PORT ?? 5183`) und `reuseExistingServer` daran binden.
+Hier bewusst nicht geändert: `playwright.config.ts` gehört nicht zu dieser Runde,
+und an einer Datei zu drehen, die gerade eine andere Arbeitskopie benutzt, macht
+es schlimmer statt besser.
+
+Alle übrigen Gates dieses Laufs sind grün: TYPECHECK_OK, BUILD_OK, BODY_OK,
+FIT_OK, PLAN_OK, CATALOG_OK, ROUTES_OK, STYLE_OK, SERVE_OK, RLS_OK.
