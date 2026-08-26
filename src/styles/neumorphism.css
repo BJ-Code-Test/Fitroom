@@ -7,7 +7,7 @@
    Untergrunds, keine Palettenauswahl. Die Oberflaeche bleibt nahezu farblos:
    die Farbe kommt von der Kleidung.
 
-   Drei Regeln, an denen der Stil steht und faellt:
+   Vier Regeln, an denen der Stil steht und faellt:
 
    1. Der Grund darf nicht zu hell sein. Auf #f4f5f8 hat Weiss keinen Platz
       mehr — dann entsteht eine Kante statt eines Reliefs. Deshalb #e0e5ec.
@@ -15,6 +15,12 @@
       Flaeche flach oder eingelassen wirken; genau das war die Beschwerde.
    3. Gedrueckt heisst: der Aussenschatten wird VOLLSTAENDIG durch inset
       ersetzt, nicht ergaenzt. Ergaenzen ergibt eine schwebende Delle.
+   4. Die zwei Aussenschatten sind NICHT symmetrisch. Ein weit gestreutes Weiss
+      oben links leuchtet, statt zu formen — es sah aus, als laege ein Schimmer
+      auf der Kante. Das Licht ist deshalb kurz und straff (halber Versatz,
+      kleiner Weichzeichner) und markiert die beleuchtete Facette; der Schatten
+      unten rechts ist lang, weich und deutlich dunkler und traegt die Hoehe.
+      So bricht die Flaeche aus dem Grund heraus, statt auf ihm zu liegen.
    ========================================================================== */
 
 /* --- Marken (hell ist der Standard) -------------------------------------- */
@@ -25,9 +31,12 @@
   --ng-accent:   #38414f;   /*  8,1:1 — Fokusring, Marken, gefuellte Flaechen */
   --ng-ink-on-accent: #ffffff;
 
-  /* Die zwei Lichtquellen. Mehr braucht der Stil nicht. */
+  /* Die zwei Lichtquellen. Mehr braucht der Stil nicht. Der Schatten ist
+     bewusst kraeftiger als das frueher benutzte #9aa9c0: mit dem blassen Wert
+     trug das Weiss die ganze Form allein, und eine Flaeche, deren einziges
+     Merkmal ein helles Leuchten ist, liegt auf dem Grund statt in ihm. */
   --ng-light:  #ffffff;
-  --ng-shadow: #9aa9c0;
+  --ng-shadow: #8697b5;
 
   /* Statusfarben, alle gegen den Grund auf mindestens 4,5:1 gerechnet. */
   --ng-ok:   #1f6b45;
@@ -39,16 +48,20 @@
   --ng-data-fix: brightness(.72) saturate(1.05);
 
   /* Vier Hoehen nach aussen. Wer eine Flaeche baut, waehlt eine Stufe statt
-     eigene Zahlen zu erfinden — sonst driftet die Lichtrichtung. */
-  --ng-up-1:  4px  4px  7px var(--ng-shadow),  -4px  -4px  7px var(--ng-light);
-  --ng-up-2:  7px  7px 12px var(--ng-shadow),  -7px  -7px 12px var(--ng-light);
-  --ng-up-3: 13px 13px 20px var(--ng-shadow), -12px -12px 18px var(--ng-light);
-  --ng-up-4: 20px 20px 30px var(--ng-shadow), -18px -18px 26px var(--ng-light);
+     eigene Zahlen zu erfinden — sonst driftet die Lichtrichtung. Pro Stufe
+     gilt dasselbe Verhaeltnis: der Schatten faellt doppelt so weit wie das
+     Licht reicht, und sein Weichzeichner ist rund anderthalbmal sein Versatz. */
+  --ng-up-1:  6px  6px 10px var(--ng-shadow),  -3px  -3px  5px var(--ng-light);
+  --ng-up-2: 11px 11px 17px var(--ng-shadow),  -6px  -6px  8px var(--ng-light);
+  --ng-up-3: 18px 18px 28px var(--ng-shadow),  -9px  -9px 12px var(--ng-light);
+  --ng-up-4: 26px 26px 40px var(--ng-shadow), -13px -13px 17px var(--ng-light);
 
-  /* Drei Tiefen nach innen — nur fuer das, was aufnimmt oder gedrueckt ist. */
-  --ng-in-1: inset  4px  4px  8px var(--ng-shadow), inset -4px  -4px  8px var(--ng-light);
-  --ng-in-2: inset  7px  7px 13px var(--ng-shadow), inset -7px  -7px 13px var(--ng-light);
-  --ng-in-3: inset 12px 12px 22px var(--ng-shadow), inset -10px -10px 20px var(--ng-light);
+  /* Drei Tiefen nach innen — nur fuer das, was aufnimmt oder gedrueckt ist.
+     Hier ist die Verteilung umgekehrt: die Mulde liegt im Schatten, das Licht
+     sammelt sich an der unteren Innenkante. */
+  --ng-in-1: inset  5px  5px  9px var(--ng-shadow), inset -4px  -4px  7px var(--ng-light);
+  --ng-in-2: inset  8px  8px 14px var(--ng-shadow), inset -6px  -6px 11px var(--ng-light);
+  --ng-in-3: inset 13px 13px 22px var(--ng-shadow), inset -9px  -9px 17px var(--ng-light);
 
   /* Weiche Radien — geformtes Material hat keine scharfen Kanten. */
   --ng-r-sm: 16px;
@@ -83,6 +96,24 @@
   --ng-data-fix: none;
 
   color-scheme: dark;
+}
+
+/* --- Schmale Bildschirme --------------------------------------------------
+   Das Relief ist in Pixeln festgelegt, die Flaechen sind es nicht: eine Kachel,
+   die auf dem Telefon 130px breit ist, traegt einen 18px-Schatten wie einen
+   Umhang. Auf schmalen Bildschirmen faellt die Leiter deshalb um rund ein
+   Drittel — dieselben Verhaeltnisse, kleinerer Massstab. */
+@media (max-width: 760px){
+  :root{
+    --ng-up-1:  4px  4px  7px var(--ng-shadow),  -2px  -2px  4px var(--ng-light);
+    --ng-up-2:  7px  7px 11px var(--ng-shadow),  -4px  -4px  6px var(--ng-light);
+    --ng-up-3: 12px 12px 18px var(--ng-shadow),  -6px  -6px  9px var(--ng-light);
+    --ng-up-4: 17px 17px 26px var(--ng-shadow),  -9px  -9px 12px var(--ng-light);
+
+    --ng-in-1: inset 4px 4px  6px var(--ng-shadow), inset -3px -3px  5px var(--ng-light);
+    --ng-in-2: inset 6px 6px 10px var(--ng-shadow), inset -4px -4px  8px var(--ng-light);
+    --ng-in-3: inset 9px 9px 15px var(--ng-shadow), inset -6px -6px 12px var(--ng-light);
+  }
 }
 
 /* --- Grundgeruest --------------------------------------------------------- */

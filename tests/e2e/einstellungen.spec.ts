@@ -57,7 +57,7 @@ test.describe('Einstellungen und Tarif', () => {
     expect(messung.schatten).not.toContain('inset');
     // Zwei davon: hell oben links, dunkel unten rechts. Jeder Schatten traegt
     // genau eine Farbangabe, also zaehlt die Zahl der rgb()-Werte die Schatten.
-    expect((messung.schatten.match(/rgba?(/g) ?? [])).toHaveLength(2);
+    expect(messung.schatten.match(/rgba?\(/g) ?? []).toHaveLength(2);
   });
 
   /**
@@ -141,6 +141,6 @@ async function grundfarbe(page: Page): Promise<string> {
 
 /** Grobe Helligkeit einer rgb()-Angabe — reicht, um hell von dunkel zu trennen. */
 function helligkeit(rgb: string): number {
-  const [r, g, b] = (rgb.match(/d+/g) ?? ['0', '0', '0']).map(Number);
+  const [r, g, b] = (rgb.match(/\d+/g) ?? ['0', '0', '0']).map(Number);
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }

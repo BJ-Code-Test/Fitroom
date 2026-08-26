@@ -20,13 +20,17 @@ benutzbar, nur nicht geräteübergreifend.
 ## Prüfen
 
 ```bash
-npm run verify:all   # alle neun Gates am Stück
+npm run verify:all   # alle zehn Gates am Stück
 ```
 
 Einzeln: `typecheck`, `build`, `verify:body`, `verify:fit`, `verify:plan`,
-`verify:catalog`, `verify:routes`, `verify:style`, `verify:serve`.
+`verify:catalog`, `verify:routes`, `verify:style`, `verify:serve`, `verify:e2e`.
 Jede Prüfung endet mit einem eigenen Token und hat eine Gegenprobe, damit sie
 auch fehlschlagen kann. Was sie belegen, steht in `GATES.md`.
+
+`tsconfig.json` schließt `tests/` mit ein. Ohne das prüft `typecheck` die
+Ende-zu-Ende-Tests nicht, und ein Tippfehler in einer Testdatei fällt erst im
+Browserlauf auf — genau das ist schon einmal passiert.
 
 ## Aufbau
 
@@ -39,9 +43,10 @@ auch fehlschlagen kann. Was sie belegen, steht in `GATES.md`.
 | `src/data/providers.ts` | `ProviderAdapter`: hier docken später echte Shop-APIs an. |
 | `src/data/catalog.ts` | 42 Teile, 6 Anbieter, echte Größenläufe. |
 | `src/data/repo.ts` | Die einzige Stelle, die Supabase kennt. Ohne Anmeldung schreibt dieselbe Schnittstelle in den localStorage. |
-| `src/state/` | `app` (Maße, Outfit, Plan), `auth` (Anmeldung), `ui` (Palette, Einheit), `catalog` (was der Plan sehen darf). |
+| `src/state/` | `app` (Maße, Outfit, Plan), `auth` (Anmeldung), `ui` (Helligkeit, Einheit), `catalog` (was der Plan sehen darf). |
 | `src/components/studio/Stage.tsx` | **Der Platzhalter.** Wird in der 3D-Runde ersetzt; die Seite drumherum bleibt unangetastet. |
-| `src/styles/neuro-glass.css` | Design-System. Nicht direkt editieren — es kommt aus der neuro-glass-Skill. |
+| `src/styles/neumorphism.css` | Das Design-System: Grundfarbe, vier Höhen, drei Tiefen, die Basisflächen. Wer eine Fläche baut, wählt eine Stufe, statt eigene Schattenwerte zu erfinden. |
+| `src/styles/app.css` | Alles Seitenspezifische. Baut ausschließlich auf den Marken aus `neumorphism.css` auf. |
 
 ## Datenbank
 
@@ -63,4 +68,9 @@ Security, jeder sieht nur seine eigenen Zeilen.
    Pro-Inhalte gehören dann serverseitig gefiltert statt nur ausgeblendet.
 3. **Echte Anbieter** — die sechs Shops sind erfunden. Eine Implementierung von
    `ProviderAdapter` mit `fetch()` reicht, die Oberfläche merkt nichts davon.
-4. **Sichtprüfung** — die Seiten wurden noch nicht im Browser durchgeklickt.
+4. **Oberfläche** — reiner Neumorphismus, geprüft in `verify:style` und in drei
+   Ende-zu-Ende-Tests (gleiche Farbe wie der Untergrund, kein `inset` am
+   Außenschatten, echter Fokusring). Die Seiten sind durchgeklickt und in beiden
+   Helligkeiten angesehen. Offen: die Höhenleiter ist in festen Pixeln notiert
+   und kennt nur zwei Maßstäbe (ab und unter 760px Breite) — ein dritter für
+   sehr große Bildschirme fehlt.
